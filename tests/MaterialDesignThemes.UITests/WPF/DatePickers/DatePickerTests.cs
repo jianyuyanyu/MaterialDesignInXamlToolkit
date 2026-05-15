@@ -333,6 +333,7 @@ public class DatePickerTests : TestBase
 
         recorder.Success();
     }
+
 }
 
 public class FutureDateValidationRule : ValidationRule
