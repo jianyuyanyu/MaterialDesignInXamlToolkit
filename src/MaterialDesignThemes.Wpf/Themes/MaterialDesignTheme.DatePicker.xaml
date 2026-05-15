@@ -120,8 +120,7 @@
                     Template="{StaticResource CalendarButtonTemplate}" />
             <Popup x:Name="PART_Popup"
                    AllowsTransparency="True"
-                   CustomPopupPlacementCallback="{x:Static wpf:CustomPopupPlacementCallbackHelper.LargePopupCallback}"
-                   Placement="Custom"
+                   Placement="Bottom"
                    PlacementTarget="{Binding ElementName=PART_TextBox}"
                    PopupAnimation="Fade"
                    StaysOpen="False" />
