@@ -341,7 +341,9 @@
 
           <Separator />
 
-          <ToggleButton />
+          <ToggleButton Content="{materialDesign:PackIcon Kind=FormatStrikethroughVariant}"
+                        IsChecked="True"
+                        ToolTip="MaterialDesignToolBarToggleButton" />
         </ToolBar>
       </ToolBarTray>
     </smtx:XamlDisplay>
