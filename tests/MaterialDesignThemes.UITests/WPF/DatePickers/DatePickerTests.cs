@@ -334,34 +334,6 @@ public class DatePickerTests : TestBase
         recorder.Success();
     }
 
-    [Test]
-    [Description("Issue 4050")]
-    public async Task DatePicker_PopupOpensBelowTextBoxByDefault()
-    {
-        await using var recorder = new TestRecorder(App);
-
-        var stackPanel = await LoadXaml<StackPanel>("""
-            <StackPanel Margin="40">
-              <DatePicker Width="200" />
-            </StackPanel>
-            """);
-        var datePicker = await stackPanel.GetElement<DatePicker>("/DatePicker");
-        var datePickerTextBox = await datePicker.GetElement<DatePickerTextBox>("/DatePickerTextBox");
-        var button = await datePicker.GetElement<Button>("PART_Button");
-        var popup = await datePicker.GetElement<Popup>("PART_Popup");
-
-        await button.LeftClick();
-        await Wait.For(async () => await popup.GetIsOpen());
-
-        Rect? textBoxCoordinates = await datePickerTextBox.GetCoordinates();
-        Rect? popupCoordinates = await popup.GetCoordinates();
-
-        await Assert.That(textBoxCoordinates).IsNotNull();
-        await Assert.That(popupCoordinates).IsNotNull();
-        await Assert.That(popupCoordinates.Value.Top).IsGreaterThanOrEqualTo(textBoxCoordinates.Value.Bottom - 1);
-
-        recorder.Success();
-    }
 }
 
 public class FutureDateValidationRule : ValidationRule

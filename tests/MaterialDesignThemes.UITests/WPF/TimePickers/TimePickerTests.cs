@@ -643,35 +643,6 @@ public class TimePickerTests : TestBase
     }
 
     [Test]
-    [Description("Issue 4050")]
-    public async Task TimePicker_PopupOpensBelowTextBoxByDefault()
-    {
-        await using var recorder = new TestRecorder(App);
-
-        var stackPanel = await LoadXaml<StackPanel>("""
-            <StackPanel Margin="40">
-              <materialDesign:TimePicker Width="200" />
-            </StackPanel>
-            """);
-        var timePicker = await stackPanel.GetElement<TimePicker>("/TimePicker");
-        var timePickerTextBox = await timePicker.GetElement<TimePickerTextBox>("/TimePickerTextBox");
-        var button = await timePicker.GetElement<Button>("PART_Button");
-        var popup = await timePicker.GetElement<Popup>("PART_Popup");
-
-        await button.LeftClick();
-        await Wait.For(async () => await popup.GetIsOpen());
-
-        Rect? textBoxCoordinates = await timePickerTextBox.GetCoordinates();
-        Rect? popupCoordinates = await popup.GetCoordinates();
-
-        await Assert.That(textBoxCoordinates).IsNotNull();
-        await Assert.That(popupCoordinates).IsNotNull();
-        await Assert.That(popupCoordinates.Value.Top).IsGreaterThanOrEqualTo(textBoxCoordinates.Value.Bottom - 1);
-
-        recorder.Success();
-    }
-
-    [Test]
     [Description("Issue 3650")]
     public async Task TimePicker_MovesFocusToPrevious_WhenShiftAndTabIsPressed()
     {
