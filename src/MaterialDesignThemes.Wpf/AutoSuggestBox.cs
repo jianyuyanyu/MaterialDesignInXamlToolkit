@@ -134,18 +134,40 @@ public class AutoSuggestBox : TextBox
         remove => RemoveHandler(SuggestionChosenEvent, value);
     }
 
+    public bool ShowSuggestionsOnFocus
+    {
+        get => (bool)GetValue(ShowSuggestionsOnFocusProperty);
+        set => SetValue(ShowSuggestionsOnFocusProperty, value);
+    }
+
+    public static readonly DependencyProperty ShowSuggestionsOnFocusProperty =
+        DependencyProperty.Register(
+            nameof(ShowSuggestionsOnFocus),
+            typeof(bool),
+            typeof(AutoSuggestBox),
+            new PropertyMetadata(false));
+
     #endregion
 
+    protected override void OnGotFocus(RoutedEventArgs e)
+    {
+        base.OnGotFocus(e);
+
+        if (ShowSuggestionsOnFocus &&
+            _autoSuggestBoxList is not null &&
+            _autoSuggestBoxList.Items.Count > 0 &&
+            !IsSuggestionOpen)
+        {
+            IsSuggestionOpen = true;
+        }
+    }
     static AutoSuggestBox() => DefaultStyleKeyProperty.OverrideMetadata(typeof(AutoSuggestBox), new FrameworkPropertyMetadata(typeof(AutoSuggestBox)));
 
     #region Override methods
 
     public override void OnApplyTemplate()
     {
-        if (_autoSuggestBoxList is not null)
-        {
-            _autoSuggestBoxList.PreviewMouseDown -= AutoSuggestionListBox_PreviewMouseDown;
-        }
+        _autoSuggestBoxList?.PreviewMouseDown -= AutoSuggestionListBox_PreviewMouseDown;
 
         if (GetTemplateChild(AutoSuggestBoxListPart) is ListBox listBox)
         {
@@ -164,27 +186,18 @@ public class AutoSuggestBox : TextBox
         {
             case Key.Down:
                 IncrementSelection();
-                e.Handled = true;
                 break;
             case Key.Up:
                 DecrementSelection();
-                e.Handled = true;
                 break;
             case Key.Enter:
                 CommitValueSelection();
-                e.Handled = true;
                 break;
             case Key.Escape:
                 CloseAutoSuggestionPopUp();
-                e.Handled = true;
                 break;
             case Key.Tab:
-                bool wasItemSelected = CommitValueSelection();
-                // Only mark the event as handled if the SuggestionList is open and therefore the Selection was successful
-                if (wasItemSelected)
-                {
-                    e.Handled = true;
-                }
+                CommitValueSelection();
                 break;
             default:
                 return;
@@ -207,10 +220,27 @@ public class AutoSuggestBox : TextBox
         base.OnTextChanged(e);
         if (_autoSuggestBoxList is null)
             return;
-        if ((Text.Length == 0 || _autoSuggestBoxList.Items.Count == 0) && IsSuggestionOpen)
-            IsSuggestionOpen = false;
-        else if (Text.Length > 0 && !IsSuggestionOpen && IsFocused && _autoSuggestBoxList.Items.Count > 0)
+
+        bool hasItems = _autoSuggestBoxList.Items.Count > 0;
+        bool isEmpty = string.IsNullOrEmpty(Text);
+
+        bool shouldOpen =
+            IsFocused &&
+            hasItems &&
+            (ShowSuggestionsOnFocus || !isEmpty);
+
+        bool shouldClose =
+            !hasItems ||
+            (!ShowSuggestionsOnFocus && isEmpty);
+
+        if (shouldOpen)
+        {
             IsSuggestionOpen = true;
+        }
+        else if (shouldClose)
+        {
+            IsSuggestionOpen = false;
+        }
     }
 
     #endregion
@@ -262,8 +292,7 @@ public class AutoSuggestBox : TextBox
         return element.GetVisualAncestry()
             .Where(x => x != this)
             .Select(IsInteractive)
-            .Where(x => x is not null)
-            .FirstOrDefault() ?? false;
+            .FirstOrDefault(x => x is not null) ?? false;
 
         static bool? IsInteractive(DependencyObject element)
         {
@@ -329,7 +358,7 @@ public class AutoSuggestBox : TextBox
         if (_autoSuggestBoxList is null || Suggestions is null)
             return;
         ICollectionView collectionView = CollectionViewSource.GetDefaultView(Suggestions);
-        int itemCount = collectionView.Cast<object>().Count();
+        int itemCount = GetItemCount(collectionView);
 
         // If we're at the last item, wrap around to the first.
         if (collectionView.CurrentPosition == itemCount - 1)
@@ -337,6 +366,15 @@ public class AutoSuggestBox : TextBox
         else
             collectionView.MoveCurrentToNext();
         _autoSuggestBoxList.ScrollIntoView(_autoSuggestBoxList.SelectedItem);
+    }
+
+    private static int GetItemCount(ICollectionView collectionView)
+    {
+        if (collectionView is ListCollectionView lcv)
+        {
+            return lcv.Count;
+        }
+        return collectionView.Cast<object>().Count();
     }
 
     #endregion
